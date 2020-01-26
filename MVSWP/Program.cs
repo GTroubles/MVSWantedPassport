@@ -12,20 +12,38 @@ namespace MVSWP
 {
     class Program
     {
-        static void Main(string[] args)
+        public static void Main()
         {
-            DataTable getData = GetData();
-            string find = "description = ''";
-            DataRow[] foundRows = getData.Select(find);
-
-            if (foundRows.Count() >= 1)
+            try
             {
-                for (int i = 0; i < foundRows.Count(); i++)
+                Data.Before();
+                DataTable getData = GetData();
+                Data.ClearTemp();
+
+                string find = "description = ''";
+                DataRow[] foundRows = getData.Select(find);
+
+                if (foundRows.Count() >= 1)
                 {
-                    DownloadJson(getData.Rows[i]["url"].ToString());
+                    for (int i = 0; i < foundRows.Count(); i++)
+                    {
+                        Data.LoadInfoToTemp(DownloadJson(getData.Rows[i]["url"].ToString()));
+                    }
+                }
+                if (Data.CheckProcedure() > 0)
+                {
+                    Console.WriteLine("Старт процедуры!");
+                    Data.LoadInfoToOriginal();
+                    Console.WriteLine("Конец процедуры!");
+                    Data.After();
                 }
             }
-            Console.WriteLine("Hello World!");
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+                return;
+            }
+            Console.ReadKey();
         }
         public static DataTable GetData()
         {
@@ -37,7 +55,7 @@ namespace MVSWP
             var bytes = new byte[1024];
 
             Stream stream = response.GetResponseStream();
-            int bytesRead = 0;
+            int bytesRead;
             do
             {
                 bytesRead = stream.Read(bytes, 0, 1024);
